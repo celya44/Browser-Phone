@@ -1,0 +1,1 @@
+../../ucp/ajax.php

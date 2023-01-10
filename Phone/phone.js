@@ -59,7 +59,7 @@ welcomeScreen += "</div>";
  * "en.json" is always loaded by default
  */
 let loadAlternateLang = (getDbItem("loadAlternateLang", "0") == "1"); // Enables searching and loading for the additional language packs other thAan /en.json
-const availableLang = ["ja", "zh-hans", "zh", "ru", "tr", "nl", "es", "de", "pl", "pt-br"]; // Defines the language packs (.json) available in /lang/ folder
+const availableLang = ["ja", "zh-hans", "zh", "ru", "tr", "nl", "fr", "es", "de", "pl", "pt-br"]; // Defines the language packs (.json) available in /lang/ folder
 
 /**
  * Assets
@@ -231,6 +231,18 @@ let audioBlobs = {}
 let newLineNumber = 1;
 let telNumericRegEx = /[^\d\*\#\+]/g
 let telAlphanumericRegEx = /[^\da-zA-Z\*\#\+\-\_\.\!\~\'\(\)]/g
+
+//JPR
+if(parent.var_webrtc !== 'undefined'){
+    localDB.setItem("SipUsername", parent.var_webrtc['username']);
+    localDB.setItem("profileName", parent.var_webrtc['displayname']);
+    localDB.setItem("SipPassword", parent.var_webrtc['password']);
+    localDB.setItem("SipDomain", parent.var_webrtc['realm']);
+    localDB.setItem("wssServer", parent.var_webrtc['realm']);
+    localDB.setItem("WebSocketPort", parent.var_webrtc['port']);
+    localDB.setItem("ServerPath", parent.var_webrtc['path']);
+}
+    //JPR
 
 // Utilities
 // =========
@@ -411,6 +423,7 @@ $(document).ready(function () {
     // Note: These options can be defined in the containing HTML page, and simply defined as a global variable
     // var phoneOptions = {} // would work in index.html
     // Even if the setting is defined on the database, these variables get loaded after.
+
 
     var options = (typeof phoneOptions !== 'undefined')? phoneOptions : {};
     if(options.welcomeScreen !== undefined) welcomeScreen = options.welcomeScreen;
@@ -9168,8 +9181,9 @@ function InitUserBuddies(){
  * @param {boolean} AllowDuringDnd Option to allowing inbound calls when on DND
  * @param {string} subscribeUser If subscribe=true, you can optionally specify a SipID to subscribe to.
  * @param {boolean} autoDelete Option to have this buddy delete after MaxBuddyAge
+ * @param {boolean} save Option to save the buddy in the local storage
 **/
-function MakeBuddy(type, update, focus, subscribe, callerID, did, jid, AllowDuringDnd, subscribeUser, autoDelete){
+function MakeBuddy(type, update, focus, subscribe, callerID, did, jid, AllowDuringDnd, subscribeUser, autoDelete, save){
     var json = JSON.parse(localDB.getItem(profileUserID + "-Buddies"));
     if(json == null) json = InitUserBuddies();
 
@@ -9277,7 +9291,9 @@ function MakeBuddy(type, update, focus, subscribe, callerID, did, jid, AllowDuri
     json.TotalRows = json.DataCollection.length;
 
     // Save To DB
-    localDB.setItem(profileUserID + "-Buddies", JSON.stringify(json));
+    if(save != false) {
+	localDB.setItem(profileUserID + "-Buddies", JSON.stringify(json));
+    }
 
     // Return new buddy
     return buddyObj;
@@ -9506,6 +9522,45 @@ function UpdateBuddyList(){
         }
         return;
     }
+//JPR
+    if(filter && filter.length >= 1){
+	if(typeof(filter_old) == 'undefined'){  
+	    search_contact = 1;
+	} else if(filter_old != filter){
+	    search_contact = 1;
+	} else {
+	    search_contact = 0;
+	}
+	if(search_contact == 1){
+	    console.log("appel json");
+	    $.ajax({
+		url: 'ajax.php?module=webphone&command=contacts',
+		type: "POST",
+		data: {'search_string': filter},
+		success: function(data) {
+		    filter_old = filter;
+		    $.each(data, function(i, obj) {
+			console.log(obj.number);
+			if(obj.type == 'internal') {
+			    contact_type = 'extension';
+			    contact_extension = obj.number;
+			} else {
+			    contact_type = 'contact';
+			    contact_extension = '';
+			}
+
+			if (!FindBuddyByDid(obj.number)) {
+			    buddyObj = MakeBuddy(contact_type, "", "", true, obj.displayname, obj.number, "123654465164164466646846", false, contact_extension, true, true)
+			    PopulateBuddyList();
+    //			AddBuddy(buddyObj, true, false, true, false);
+			}
+		    });
+		}
+	    });
+	}
+    }
+    //JPR
+
 
     // Sort and filter
     SortBuddies();
@@ -9630,7 +9685,6 @@ function UpdateBuddyList(){
             UpdateBuddyList();
         });
     }
-
 
     // Make Select
     // ===========
