@@ -9539,8 +9539,7 @@ function UpdateBuddyList(){
 		data: {'search_string': filter},
 		success: function(data) {
 		    filter_old = filter;
-		    $.each(data, function(i, obj) {
-			console.log(obj.number);
+		    $.each(JSON.parse(data.data), function(i, obj) {
 			if(obj.type == 'internal') {
 			    contact_type = 'extension';
 			    contact_extension = obj.number;
@@ -9552,6 +9551,7 @@ function UpdateBuddyList(){
 			if (!FindBuddyByDid(obj.number)) {
 			    buddyObj = MakeBuddy(contact_type, "", "", true, obj.displayname, obj.number, "123654465164164466646846", false, contact_extension, true, true)
 			    PopulateBuddyList();
+			    console.log("contact added :",obj.number);
     //			AddBuddy(buddyObj, true, false, true, false);
 			}
 		    });
