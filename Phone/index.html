@@ -32,7 +32,21 @@
         <script type="text/javascript">
             // Provision runtime options can go here.
             var phoneOptions = {
-                loadAlternateLang: true
+                loadAlternateLang: true,
+                VoiceMailSubscribe: "1",
+                VoicemailDid: "",
+                ChatEngine: "SIMPLE",
+                profileUser: "",
+                XmppServer: "",
+                XmppWebsocketPort: "",
+                XmppWebsocketPath: "",
+                SipUsername: parent.var_webrtc['username'],
+                profileName: parent.var_webrtc['displayname'],
+                SipPassword: parent.var_webrtc['password'],
+                SipDomain: parent.var_webrtc['realm'],
+                wssServer: parent.var_webrtc['realm'],
+                WebSocketPort: parent.var_webrtc['port'],
+                ServerPath: parent.var_webrtc['path']
             }
 
             // Occurs After the Language Packs load, at the start of the InitUi() function 
@@ -44,6 +58,10 @@
             // and transport events below. 
             var web_hook_on_init = function(){
                 // console.warn("web_hook_on_init");
+                // Add Echo test Buddy
+                if (!FindBuddyByDid("*43")) {
+                    buddyObj = MakeBuddy('extension', true, false, false, "Echo Test", "*43", null, false, null, false, true);
+                }
             }
 
             // Connection and Calling Events

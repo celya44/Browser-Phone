@@ -232,17 +232,6 @@ let newLineNumber = 1;
 let telNumericRegEx = /[^\d\*\#\+]/g
 let telAlphanumericRegEx = /[^\da-zA-Z\*\#\+\-\_\.\!\~\'\(\)]/g
 
-//JPR
-if(parent.var_webrtc !== 'undefined'){
-    localDB.setItem("SipUsername", parent.var_webrtc['username']);
-    localDB.setItem("profileName", parent.var_webrtc['displayname']);
-    localDB.setItem("SipPassword", parent.var_webrtc['password']);
-    localDB.setItem("SipDomain", parent.var_webrtc['realm']);
-    localDB.setItem("wssServer", parent.var_webrtc['realm']);
-    localDB.setItem("WebSocketPort", parent.var_webrtc['port']);
-    localDB.setItem("ServerPath", parent.var_webrtc['path']);
-}
-    //JPR
 
 // Utilities
 // =========
@@ -1528,16 +1517,26 @@ function InitUi(){
 
     UpdateUI();
 
+    if(parent.var_webrtc !== 'undefined'){
+        if(localDB.getItem("profileUserID") == null) { // For first time only
+            localDB.setItem("profileUserID", uID());
+	    Alert(lang.alert_settings, lang.reload_required, function(){
+		window.location.reload();
+	    });
+	    return;
+        }
+    }
+
     // Show Welcome Screen
     if(welcomeScreen){
         if(localDB.getItem("WelcomeScreenAccept") != "yes"){
             OpenWindow(welcomeScreen, lang.welcome, 480, 600, true, false, lang.accept, function(){
                 localDB.setItem("WelcomeScreenAccept", "yes");
                 CloseWindow();
-                ShowMyProfile();
+                // ShowMyProfile();
             }, null, null, null, null);
 
-            return;
+            // return;
         }
     }
 
@@ -9522,7 +9521,6 @@ function UpdateBuddyList(){
         }
         return;
     }
-//JPR
     if(filter && filter.length >= 1){
 	if(typeof(filter_old) == 'undefined'){  
 	    search_contact = 1;
@@ -9552,14 +9550,12 @@ function UpdateBuddyList(){
 			    buddyObj = MakeBuddy(contact_type, "", "", true, obj.displayname, obj.number, "123654465164164466646846", false, contact_extension, true, true)
 			    PopulateBuddyList();
 			    console.log("contact added :",obj.number);
-    //			AddBuddy(buddyObj, true, false, true, false);
 			}
 		    });
 		}
 	    });
 	}
     }
-    //JPR
 
 
     // Sort and filter
