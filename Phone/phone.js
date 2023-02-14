@@ -1520,9 +1520,7 @@ function InitUi(){
     if(parent.var_webrtc !== 'undefined'){
         if(localDB.getItem("profileUserID") == null) { // For first time only
             localDB.setItem("profileUserID", uID());
-	    Alert(lang.alert_settings, lang.reload_required, function(){
-		window.location.reload();
-	    });
+	    window.location.reload();
 	    return;
         }
     }
