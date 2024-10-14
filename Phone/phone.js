@@ -65,7 +65,7 @@ const availableLang = ["ja", "zh-hans", "zh", "ru", "tr", "nl", "fr", "es", "de"
  * Assets
  * Note: You can specify the assets to use below in array format
  */
-const avatars = ["avatars/default.0.png", "avatars/default.1.png", "avatars/default.2.png", "avatars/default.3.png", "avatars/default.4.png", "avatars/default.5.png", "avatars/default.6.png", "avatars/default.7.png", "avatars/default.8.png"]
+const avatars = ["avatars/logo.png"]
 const wallpaperLight = "wallpaper.light.png"            // Wallpaper for Light Theme
 const wallpaperDark = "wallpaper.dark.png"              // Wallpaper for Dark Theme
 
@@ -146,19 +146,23 @@ let RecordingLayout = getDbItem("RecordingLayout", "them-pnp");             // T
 let DidLength = parseInt(getDbItem("DidLength", 6));                 // DID length from which to decide if an incoming caller is a "contact" or an "extension".
 let MaxDidLength = parseInt(getDbItem("MaxDidLength", 16));          // Maximum length of any DID number including international dialled numbers.
 let DisplayDateFormat = getDbItem("DateFormat", "YYYY-MM-DD");       // The display format for all dates. https://momentjs.com/docs/#/displaying/
-let DisplayTimeFormat = getDbItem("TimeFormat", "h:mm:ss A");        // The display format for all times. https://momentjs.com/docs/#/displaying/
+let DisplayTimeFormat = getDbItem("TimeFormat", "H:mm:ss");          // The display format for all times. https://momentjs.com/docs/#/displaying/
 let Language = getDbItem("Language", "auto");                        // Overrides the language selector or "automatic". Must be one of availableLang[]. If not defaults to en.
 
 // Buddy Sort and Filter
 let BuddySortBy = getDbItem("BuddySortBy", "activity");                      // Sorting for Buddy List display (type|extension|alphabetical|activity)
 let SortByTypeOrder = getDbItem("SortByTypeOrder", "e|x|c");                 // If the Sorting is set to type then describe the order of the types.
 let BuddyAutoDeleteAtEnd = (getDbItem("BuddyAutoDeleteAtEnd", "0") == "1");  // Always put the Auto Delete buddies at the bottom
-let HideAutoDeleteBuddies = (getDbItem("HideAutoDeleteBuddies", "0") == "1");    // Option to not display Auto Delete Buddies (May be confusing if newly created buddies are set to auto delete.)
+let HideAutoDeleteBuddies = (getDbItem("HideAutoDeleteBuddies", "0") == "1");// Option to not display Auto Delete Buddies (May be confusing if newly created buddies are set to auto delete.)
 let BuddyShowExtenNum = (getDbItem("BuddyShowExtenNum", "0") == "1");        // Controls the Extension Number display
+let BuddyFilterDelayAjax = null;                                             // Controls the time before ajax call on search / filter
+let BuddyFilterOld = null;                                                   // Previous search / filter
+let BuddyShowEmpty = (getDbItem("BuddyShowEmpty", "0") == "1");              // Show the Buddy List event if there is no Buddies
 
 // Permission Settings
 let EnableTextMessaging = (getDbItem("EnableTextMessaging", "1") == "1");               // Enables the Text Messaging
 let DisableFreeDial = (getDbItem("DisableFreeDial", "0") == "1");                       // Removes the Dial icon in the profile area, users will need to add buddies in order to dial.
+let DisableAddEditBuddies = (getDbItem("DisableAddEditBuddies", "0") == "1");           // Removes the Add Someone and Edit Buddy menu items and icons from the profile area. Buddies will still be created automatically. Please also use MaxBuddies or MaxBuddyAge
 let DisableBuddies = (getDbItem("DisableBuddies", "0") == "1");                         // Removes the Add Someone menu item and icon from the profile area. Buddies will still be created automatically. Please also use MaxBuddies or MaxBuddyAge
 let EnableTransfer = (getDbItem("EnableTransfer", "1") == "1");                         // Controls Transferring during a call
 let EnableConference = (getDbItem("EnableConference", "1") == "1");                     // Controls Conference during a call
@@ -489,8 +493,10 @@ $(document).ready(function () {
     if(options.BuddyAutoDeleteAtEnd !== undefined) BuddyAutoDeleteAtEnd = options.BuddyAutoDeleteAtEnd;
     if(options.HideAutoDeleteBuddies !== undefined) HideAutoDeleteBuddies = options.HideAutoDeleteBuddies;
     if(options.BuddyShowExtenNum !== undefined) BuddyShowExtenNum = options.BuddyShowExtenNum;
+    if(options.BuddyShowEmpty !== undefined) BuddyShowEmpty = options.BuddyShowEmpty;
     if(options.EnableTextMessaging !== undefined) EnableTextMessaging = options.EnableTextMessaging;
     if(options.DisableFreeDial !== undefined) DisableFreeDial = options.DisableFreeDial;
+    if(options.DisableAddEditBuddies !== undefined) DisableAddEditBuddies = options.DisableAddEditBuddies;
     if(options.DisableBuddies !== undefined) DisableBuddies = options.DisableBuddies;
     if(options.EnableTransfer !== undefined) EnableTransfer = options.EnableTransfer;
     if(options.EnableConference !== undefined) EnableConference = options.EnableConference;
@@ -791,7 +797,7 @@ function AddSomeoneWindow(numberStr){
     html += "</div>";
 
     html += "<div id=Persistance>";
-    html += "<div class=UiText>Auto Delete:</div>";
+    html += "<div class=UiText>"+ lang.auto_delete +":</div>";
     html += "<div><input type=checkbox id=AddSomeone_AutoDelete><label for=AddSomeone_AutoDelete>"+ lang.yes +"</label></div>";
     html += "</div>";
 
@@ -1103,7 +1109,7 @@ function EditBuddyWindow(buddy){
     
     html += "<div class=UiText>"+ lang.full_name +":</div>";
     html += "<div><input id=AddSomeone_Name class=UiInputText type=text placeholder='"+ lang.eg_full_name +"' value='"+ ((buddyJson.DisplayName && buddyJson.DisplayName != "null" && buddyJson.DisplayName != "undefined")? buddyJson.DisplayName : "") +"'></div>";
-    html += "<div><input type=checkbox id=AddSomeone_Dnd "+ ((buddyJson.EnableDuringDnd == true)? "checked" : "" ) +"><label for=AddSomeone_Dnd>Allow calls while on Do Not Disturb</label></div>";
+    html += "<div><input type=checkbox id=AddSomeone_Dnd "+ ((buddyJson.EnableDuringDnd == true)? "checked" : "" ) +"><label for=AddSomeone_Dnd>"+ lang.allow_calls_on_dnd +"</label></div>";
 
     html += "<div class=UiText>"+ lang.title_description +":</div>";
     html += "<div><input id=AddSomeone_Desc class=UiInputText type=text placeholder='"+ lang.eg_general_manager +"' value='"+ ((buddyJson.Description && buddyJson.Description != "null" && buddyJson.Description != "undefined")? buddyJson.Description : "") +"'></div>";
@@ -1132,7 +1138,7 @@ function EditBuddyWindow(buddy){
     html += "<div class=UiText>"+ lang.contact_number_2 +":</div>";
     html += "<div><input id=AddSomeone_Num2 class=UiInputText type=text placeholder='"+ lang.eg_contact_number_2 +"' value='"+ ((buddyJson.ContactNumber2 && buddyJson.ContactNumber2 != "null" && buddyJson.ContactNumber2 != "undefined")? buddyJson.ContactNumber2 : "") +"'></div>";
 
-    html += "<div class=UiText>Auto Delete:</div>";
+    html += "<div class=UiText>"+ lang.auto_delete +":</div>";
     html += "<div><input type=checkbox id=AddSomeone_AutoDelete "+ ((buddyJson.AutoDelete == true)? "checked" : "" ) +"><label for=AddSomeone_AutoDelete>"+ lang.yes +"</label></div>";
 
     // TODO, add option to delete data, etc, etc
@@ -1377,7 +1383,9 @@ function InitUi(){
     // Action Buttons
     leftHTML += "<span class=settingsMenu>";
     leftHTML += "<button class=roundButtons id=BtnFreeDial><i class=\"fa fa-phone\"></i></button>";
-    leftHTML += "<button class=roundButtons id=BtnAddSomeone><i class=\"fa fa-user-plus\"></i></button>";
+    if(DisableAddEditBuddies===false){
+        leftHTML += "<button class=roundButtons id=BtnAddSomeone><i class=\"fa fa-user-plus\"></i></button>";
+    }
     if(false){
          // TODO
         leftHTML += "<button id=BtnCreateGroup><i class=\"fa fa-users\"></i><i class=\"fa fa-plus\" style=\"font-size:9px\"></i></button>";
@@ -1569,7 +1577,10 @@ function ShowMyProfileMenu(obj){
     items.push({ icon: "fa fa-refresh", text: lang.refresh_registration, value: 1});
     items.push({ icon: "fa fa-wrench", text: lang.configure_extension, value: 2});
     items.push({ icon: null, text: "-" });
-    items.push({ icon: "fa fa-user-plus", text: lang.add_someone, value: 3});
+    if(DisableAddEditBuddies===false){
+        items.push({ icon: "fa fa-user-plus", text: lang.add_someone, value: 3});
+    }
+    items.push({ icon: "fa fa-user-times", text: lang.del_everyone, value: 99});
     // items.push({ icon: "fa fa-users", text: lang.create_group, value: 4}); // TODO
     items.push({ icon : null, text: "-" });
     if(AutoAnswerEnabled == true){
@@ -1632,6 +1643,9 @@ function ShowMyProfileMenu(obj){
             }
             if(id == "9") {
                 SetStatusWindow();
+            }
+            if(id == "99") {
+                DoRemoveAllBuddies();
             }
 
         },
@@ -4929,10 +4943,10 @@ function ReceiveOutOfDialogMessage(message) {
                 EnableDuringDnd: false,
                 Subscribe: false
             });
-            buddyObj = new Buddy("extension", id, callerID, did, "", "", "", dateNow, "", "", jid, false, false);
+            buddyObj = new Buddy("extension", id, callerID, did, "", "", "", dateNow, "", "", null, false, false);
             
             // Add memory object
-            AddBuddy(buddyObj, true, (CurrentCalls==0), false, tue);
+            AddBuddy(buddyObj, true, (CurrentCalls==0), false, true);
 
             // Update Size: 
             json.TotalRows = json.DataCollection.length;
@@ -6300,6 +6314,88 @@ function MixAudioStreams(MultiAudioTackStream){
     return mixedAudioStream.stream;
 }
 
+// Search FreePBX Contacts and add them
+// ====================================
+function SearchFreePBXContacts(filter, inputObj = null){
+    if(typeof(BuddyFilterOld) == 'undefined' || BuddyFilterOld != filter){
+        if(BuddyFilterDelayAjax !== null){
+            clearTimeout(BuddyFilterDelayAjax);
+        }
+        BuddyFilterDelayAjax = setTimeout( function(){
+            if(typeof parent.moduleSettings.Contactmanager.contacts != undefined){
+                // Search in freepbx/UCP contacts names
+                let contacts = parent.moduleSettings.Contactmanager.contacts.filter( o => o.displayname.toLowerCase().includes(filter.toLowerCase()) === true );
+                // Sort contacts by name and limit the number of results
+                contacts.sort((a, b) => a.displayname.localeCompare(b.displayname));
+                if(contacts.length > MaxBuddies){
+                    contacts.splice(MaxBuddies);
+                }
+                // Flag indicating if contacts are added
+                let found = false;
+                for(obj of contacts){
+                    let num_numbers = Object.values(obj.numbers).length;
+                    let buddyNumber = '';
+                    let buddyType = 'contact';
+                    let buddySubscribe = false;
+                    let buddySubscribeNum = '';
+                    let idxFoundBuddies = Buddies.findIndex( o => o.CallerIDName === obj.displayname);
+
+                    // If the contact does not have any numbers, we skip it
+                    // If we find a existing contact with this name, we skip it
+                    if ( num_numbers !== 0 && idxFoundBuddies === -1) {
+                        found = true;
+                        if(obj.numbers.hasOwnProperty('internal')) {
+                            buddyType = 'extension';
+                            buddyNumber = obj.numbers.internal;
+                            buddySubscribe = true;
+                            buddySubscribeNum = buddyNumber;
+                        } else {
+                            buddyNumber = Object.values(obj.numbers)[0];
+                        }
+                        if(num_numbers === 1 && typeof(buddyNumber) !== "string"){
+                            num_numbers++;
+                        }
+                        // If the contacts has multiple numbers, we use another function
+                        if(num_numbers === 1){
+                            MakeBuddy(buddyType, false, false, buddySubscribe, obj.displayname, buddyNumber, null, false, buddySubscribeNum, true, true);
+                        }else if (num_numbers > 1){
+                            MakeBuddyWithNumbers(buddyType, obj.displayname, obj.numbers);
+                        }
+                    }
+                }
+                // Reload the Buddy displayed, only if we added at least a Buddy
+                if(found){
+                    UpdateBuddyList();
+                }
+            }else{
+                $.ajax({
+                    url: 'ajax.php?module=webphone&command=contacts',
+                    type: "POST",
+                    data: {'search_string': filter},
+                    success: function(data) {
+                        let found = false;
+                        $.each(JSON.parse(data.data), function(i, obj) {
+                            contact_type = 'contact';
+                            if (!FindBuddyByDid(obj.number)) {
+                                found = true;
+                                buddyObj = MakeBuddy(contact_type, false, false, false, obj.displayname, obj.number, null, false, "", true, true);
+                            }
+                        });
+                        if(found){
+                            UpdateBuddyList();
+                        }
+                    }
+                });
+            }
+            BuddyFilterDelayAjax = null;
+            if(inputObj != null){
+                QuickFindBuddy(inputObj);
+            }
+        }, 250);
+        BuddyFilterOld = filter;
+    }
+}
+
 // Call Transfer & Conference
 // ============================
 function QuickFindBuddy(obj){
@@ -6309,6 +6405,7 @@ function QuickFindBuddy(obj){
         return;
     }
 
+    SearchFreePBXContacts(filter,obj);
     console.log("Find Buddy: ", filter);
 
     Buddies.sort(function(a, b){
@@ -9183,14 +9280,17 @@ function InitUserBuddies(){
  * @param {boolean} save Option to save the buddy in the local storage
 **/
 function MakeBuddy(type, update, focus, subscribe, callerID, did, jid, AllowDuringDnd, subscribeUser, autoDelete, save){
-    var json = JSON.parse(localDB.getItem(profileUserID + "-Buddies"));
-    if(json == null) json = InitUserBuddies();
+    var json = null;
 
     var dateNow = utcDateNow();
     var buddyObj = null;
     var id = uID();
 
     if(type == "extension") {
+        buddyObj = new Buddy("extension", id, callerID, did, "", "", "", dateNow, "", "", null, AllowDuringDnd, subscribe, subscribeUser, autoDelete);
+        AddBuddy(buddyObj, update, focus, subscribe, true);
+        json = JSON.parse(localDB.getItem(profileUserID + "-Buddies"));
+        if(json == null) json = InitUserBuddies();
         json.DataCollection.push({
             Type: "extension",
             LastActivity: dateNow,
@@ -9211,10 +9311,12 @@ function MakeBuddy(type, update, focus, subscribe, callerID, did, jid, AllowDuri
             SubscribeUser: subscribeUser,
             AutoDelete: autoDelete
         });
-        buddyObj = new Buddy("extension", id, callerID, did, "", "", "", dateNow, "", "", null, AllowDuringDnd, subscribe, subscribeUser, autoDelete);
-        AddBuddy(buddyObj, update, focus, subscribe, true);
     }
     if(type == "xmpp") {
+        buddyObj = new Buddy("xmpp", id, callerID, did, "", "", "", dateNow, "", "", jid, AllowDuringDnd, subscribe, subscribeUser, autoDelete);
+        AddBuddy(buddyObj, update, focus, subscribe, true);
+        json = JSON.parse(localDB.getItem(profileUserID + "-Buddies"));
+        if(json == null) json = InitUserBuddies();
         json.DataCollection.push({
             Type: "xmpp",
             LastActivity: dateNow,
@@ -9239,6 +9341,10 @@ function MakeBuddy(type, update, focus, subscribe, callerID, did, jid, AllowDuri
         AddBuddy(buddyObj, update, focus, subscribe, true);
     }
     if(type == "contact"){
+        buddyObj = new Buddy("contact", id, callerID, "", "", did, "", dateNow, "", "", null, AllowDuringDnd, false, null, autoDelete);
+        AddBuddy(buddyObj, update, focus, false, true);
+        json = JSON.parse(localDB.getItem(profileUserID + "-Buddies"));
+        if(json == null) json = InitUserBuddies();
         json.DataCollection.push({
             Type: "contact", 
             LastActivity: dateNow,
@@ -9259,10 +9365,12 @@ function MakeBuddy(type, update, focus, subscribe, callerID, did, jid, AllowDuri
             SubscribeUser: null,
             AutoDelete: autoDelete
         });
-        buddyObj = new Buddy("contact", id, callerID, "", "", did, "", dateNow, "", "", null, AllowDuringDnd, false, null, autoDelete);
-        AddBuddy(buddyObj, update, focus, false, true);
     }
     if(type == "group") {
+        buddyObj = new Buddy("group", id, callerID, did, "", "", "", dateNow, "", "", null, false, false, null, autoDelete);
+        AddBuddy(buddyObj, update, focus, false, true);
+        json = JSON.parse(localDB.getItem(profileUserID + "-Buddies"));
+        if(json == null) json = InitUserBuddies();
         json.DataCollection.push({
             Type: "group",
             LastActivity: dateNow,
@@ -9283,8 +9391,6 @@ function MakeBuddy(type, update, focus, subscribe, callerID, did, jid, AllowDuri
             SubscribeUser: null,
             AutoDelete: autoDelete
         });
-        buddyObj = new Buddy("group", id, callerID, did, "", "", "", dateNow, "", "", null, false, false, null, autoDelete);
-        AddBuddy(buddyObj, update, focus, false, true);
     }
     // Update Size: 
     json.TotalRows = json.DataCollection.length;
@@ -9510,7 +9616,7 @@ function UpdateBuddyList(){
     }
 
     // If there are no buddies, and no calls, then, show the dial pad
-    if(Buddies.length == 0 && callCount == 0){
+    if(BuddyShowEmpty === false && Buddies.length == 0 && callCount == 0){
         console.warn("You have no buddies, will show the Dial Screen rather");
         if(UiCustomDialButton == true){
             if(typeof web_hook_dial_out !== 'undefined') {
@@ -9522,41 +9628,11 @@ function UpdateBuddyList(){
         return;
     }
     if(filter && filter.length >= 1){
-	if(typeof(filter_old) == 'undefined'){  
-	    search_contact = 1;
-	} else if(filter_old != filter){
-	    search_contact = 1;
-	} else {
-	    search_contact = 0;
-	}
-	if(search_contact == 1){
-	    console.log("appel json");
-	    $.ajax({
-		url: 'ajax.php?module=webphone&command=contacts',
-		type: "POST",
-		data: {'search_string': filter},
-		success: function(data) {
-		    filter_old = filter;
-		    $.each(JSON.parse(data.data), function(i, obj) {
-			if(obj.type == 'internal') {
-			    contact_type = 'extension';
-			    contact_extension = obj.number;
-			} else {
-			    contact_type = 'contact';
-			    contact_extension = '';
-			}
-
-			if (!FindBuddyByDid(obj.number)) {
-			    buddyObj = MakeBuddy(contact_type, "", "", true, obj.displayname, obj.number, "123654465164164466646846", false, contact_extension, true, true)
-			    PopulateBuddyList();
-			    console.log("contact added :",obj.number);
-			}
-		    });
-		}
-	    });
-	}
+        SearchFreePBXContacts(filter);
+    }else if(BuddyFilterDelayAjax !== null){
+        clearTimeout(BuddyFilterDelayAjax);
+        BuddyFilterDelayAjax = null;
     }
-
 
     // Sort and filter
     SortBuddies();
@@ -9691,6 +9767,68 @@ function UpdateBuddyList(){
         }
     }
 }
+function MakeBuddyWithNumbers(type, displayname, numbers){
+    for(num in numbers){
+        if(typeof(numbers[num]) === "object" ){
+            console.error(numbers);
+            numbers[num] = numbers[num][0];
+        }        
+    }
+    let defaultNumber = Object.values(numbers)[0];
+    // Handle subscription (BLF) for extensions
+    let buddySubscribe = false;
+    let buddySubscribeNum = '';
+    if(type === 'extension'){
+        buddySubscribe = true;
+        buddySubscribeNum = numbers.internal;
+        defaultNumber = numbers.internal;
+    }
+    // Creating a Buddy
+    buddyObj = MakeBuddy(type, false, false, buddySubscribe, displayname, defaultNumber, null, false, buddySubscribeNum, true, false);
+    // Modifying Buddy with all the numbers
+    idx = Buddies.findIndex( o => buddyObj.identity === o.identity );
+    if(type === 'extension'){
+        Buddies[idx].ExtNo = numbers.internal;
+        Buddies[idx].ContactNumber1 = numbers.work ? numbers.work : "";
+        Buddies[idx].ContactNumber2 = numbers.home ? numbers.home : "";
+        Buddies[idx].MobileNumber = numbers.cell ? numbers.cell : "";
+    }else{
+        Buddies[idx].ExtNo = "";
+        Buddies[idx].ContactNumber1 = numbers.work ? numbers.work : "";
+        Buddies[idx].ContactNumber2 = numbers.home ? numbers.home : "";
+        Buddies[idx].MobileNumber = numbers.cell ? numbers.cell : "";
+    }
+    // Saving Buddy in LocalDB
+    AddBuddyToLocalDB(Buddies[idx]);
+}
+function AddBuddyToLocalDB(buddy){
+    // Getting LocalDB Buddies
+    let json_buds = JSON.parse(localDB.getItem(profileUserID + "-Buddies"));
+    // Adding Buddy to json
+    json_buds.DataCollection.push({
+        Type: buddy.type,
+        LastActivity: buddy.lastActivity,
+        ExtensionNumber: buddy.type === 'extension' ? buddy.ExtNo : "",
+        MobileNumber: buddy.MobileNumber,
+        ContactNumber1: buddy.ContactNumber1,
+        ContactNumber2: buddy.ContactNumber2,
+        uID: buddy.type === 'extension' ? buddy.identity : null,
+        cID: buddy.type === 'contact' ? buddy.identity : null,
+        gID: null,
+        jid: null,
+        DisplayName: buddy.CallerIDName,
+        Description: buddy.Desc,
+        Email: buddy.Email,
+        MemberCount: 0,
+        EnableDuringDnd: buddy.EnableDuringDnd,
+        Subscribe: buddy.EnableSubscribe,
+        SubscribeUser: buddy.ExtNo,
+        AutoDelete: buddy.AllowAutoDelete
+    });
+    json_buds.TotalRows = json_buds.DataCollection.length;
+    // Saving the modifications
+    localDB.setItem(profileUserID + "-Buddies", JSON.stringify(json_buds));
+}
 function AddBuddyMessageStream(buddyObj) {
 
     // Profile Etc Row
@@ -9774,7 +9912,9 @@ function AddBuddyMessageStream(buddyObj) {
         profileRow += " <button id=\"contact-"+ buddyObj.identity +"-btn-videoCall\" onclick=\"DialByLine('video', '"+ buddyObj.identity +"', '"+ buddyObj.ExtNo +"');\" class=roundButtons title=\""+ lang.video_call +"\"><i class=\"fa fa-video-camera\"></i></button>";
     }
     profileRow += "<span id=\"contact-"+ buddyObj.identity +"-extra-buttons\" style=\"display:none\">"
-    profileRow += " <button id=\"contact-"+ buddyObj.identity +"-btn-edit\" onclick=\"EditBuddyWindow('"+ buddyObj.identity +"')\" class=roundButtons title=\""+ lang.edit +"\"><i class=\"fa fa-pencil\"></i></button>";
+    if(DisableAddEditBuddies===false){
+        profileRow += " <button id=\"contact-"+ buddyObj.identity +"-btn-edit\" onclick=\"EditBuddyWindow('"+ buddyObj.identity +"')\" class=roundButtons title=\""+ lang.edit +"\"><i class=\"fa fa-pencil\"></i></button>";
+    }
     profileRow += " <button id=\"contact-"+ buddyObj.identity +"-btn-search\" onclick=\"FindSomething('"+ buddyObj.identity +"')\" class=roundButtons title=\""+ lang.find_something +"\"><i class=\"fa fa-search\"></i></button>";
     profileRow += " <button id=\"contact-"+ buddyObj.identity +"-btn-pin\" onclick=\"TogglePinned('"+ buddyObj.identity +"')\" class=roundButtons title=\""+ lang.pin_to_top +"\"><i class=\"fa fa-thumb-tack\"></i></button>";
     profileRow += "</span>"
@@ -9931,7 +10071,9 @@ function RemoveBuddyMessageStream(buddyObj, days){
         }
     }
     else {
-        CloseBuddy(buddyObj.identity);
+        if(jQuery('table[id^=line].streamSelected').length === 0){
+            CloseBuddy(buddyObj.identity);
+        }
 
         // Remove From UI
         $("#stream-"+ buddyObj.identity).remove();
@@ -10258,6 +10400,17 @@ function DoRemoveBuddy(buddy){
             break;
         }
     }
+}
+function DoRemoveAllBuddies(){
+    CloseWindow();
+    for(var b = 0; b < Buddies.length; b++) {
+        RemoveBuddyMessageStream(Buddies[b]);
+        UnsubscribeBuddy(Buddies[b]);
+        if(Buddies[b].type == "xmpp") XmppRemoveBuddyFromRoster(Buddies[b]);
+    }
+    Buddies.splice(0);
+    InitUserBuddies();
+    UpdateBuddyList();
 }
 function FindBuddyByDid(did){
     // Used only in Inbound
