@@ -56,6 +56,9 @@
             // Occurs After the Language Packs load, at the start of the InitUi() function 
             var web_hook_on_before_init = function(){
                 // console.warn("web_hook_on_before_init");
+                for (const prop in phoneOptions){
+                    window.localStorage.setItem(prop, phoneOptions[prop]);
+                }
             }
             // Occurs at the end of the InitUi() function, before the User Agent is created.
             // In order to follow events after the User Agent is created, use the register
