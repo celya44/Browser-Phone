@@ -1,6 +1,7 @@
 {
     "create_group" : "Créer un groupe",
     "add_someone" : "Ajouter un contact",
+    "del_everyone" : "Supprimer tout les contacts",
     "find_someone" : "Rechercher un contact...",
     "refresh_registration" : "Renouveller l'enregistrement",
     "configure_extension" : "Paramètres du poste",
@@ -25,6 +26,7 @@
     "eg_contact_number_1" : "par ex: 0261918461",
     "contact_number_2" : "Numéro du Contact 2",
     "eg_contact_number_2" : "par ex: 0199006385",
+    "auto_delete" : "Suppression automatique",
     "add" : "Ajouter",
     "cancel" : "Annuler",
     "save" : "Enregistrer",

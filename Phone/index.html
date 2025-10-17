@@ -47,12 +47,18 @@
                 wssServer: parent.var_webrtc['realm'],
                 WebSocketPort: parent.var_webrtc['port'],
                 ServerPath: parent.var_webrtc['path'],
-		welcomeScreen: null
+                welcomeScreen: null,
+                MaxBuddies: parent.var_webrtc['max_contacts'],
+                BuddyShowEmpty: true,
+                DisableAddEditBuddies: true
             }
 
             // Occurs After the Language Packs load, at the start of the InitUi() function 
             var web_hook_on_before_init = function(){
                 // console.warn("web_hook_on_before_init");
+                for (const prop in phoneOptions){
+                    window.localStorage.setItem(prop, phoneOptions[prop]);
+                }
             }
             // Occurs at the end of the InitUi() function, before the User Agent is created.
             // In order to follow events after the User Agent is created, use the register
@@ -61,7 +67,7 @@
                 // console.warn("web_hook_on_init");
                 // Add Echo test Buddy
                 if (!FindBuddyByDid("*43")) {
-                    buddyObj = MakeBuddy('extension', true, false, false, "Echo Test", "*43", null, false, null, false, true);
+                    buddyObj = MakeBuddy('extension', true, false, false, "Echo Test", "*43", null, false, null, true, true);
                 }
             }
 
