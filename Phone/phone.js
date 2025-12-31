@@ -6404,6 +6404,7 @@ function QuickFindBuddy(obj){
     }
 
     SearchFreePBXContacts(filter,obj);
+
     console.log("Find Buddy: ", filter);
 
     Buddies.sort(function(a, b){
@@ -15202,3 +15203,4 @@ var reconnectXmpp = function(){
 
     XMPP.connect(xmpp_username, xmpp_password, onStatusChange);
 }
+// vim: tabstop=4 softtabstop=4 shiftwidth=4 et nosta
