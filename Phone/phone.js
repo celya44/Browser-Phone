@@ -7630,13 +7630,22 @@ function sendDTMF(lineNum, itemStr) {
         duration: 100,
         interToneGap: 70
     }
+    let infoOptions = {
+        requestOptions: {
+        body: {
+            contentDisposition: "render",
+            contentType: "application/dtmf-relay",
+            content: "Signal="+itemStr+"\r\nDuration=500"
+        }
+        }
+    };
     
     if(lineObj.SipSession.isOnHold == true){
         if(lineObj.SipSession.data.childsession){
             if(lineObj.SipSession.data.childsession.state == SIP.SessionState.Established){
                 console.log("Sending DTMF ("+ itemStr +"): "+ lineObj.LineNumber + " child session");
 
-                var result = lineObj.SipSession.data.childsession.sessionDescriptionHandler.sendDtmf(itemStr, options);
+                let result = lineObj.SipSession.info(infoOptions);
                 if(result){
                     console.log("Sent DTMF ("+ itemStr +") child session");
                 }
@@ -7656,7 +7665,7 @@ function sendDTMF(lineNum, itemStr) {
         if(lineObj.SipSession.state == SIP.SessionState.Established || lineObj.SipSession.state == SIP.SessionState.Establishing){
             console.log("Sending DTMF ("+ itemStr +"): "+ lineObj.LineNumber);
 
-            var result = lineObj.SipSession.sessionDescriptionHandler.sendDtmf(itemStr, options);
+            let result = lineObj.SipSession.info(infoOptions);
             if(result){
                 console.log("Sent DTMF ("+ itemStr +")");
             }
